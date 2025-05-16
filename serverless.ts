@@ -1,5 +1,5 @@
 import type { AWS } from '@serverless/typescript';
-import { MONGO_URI, NODE_ENV } from './config';
+import { MONGO_URI, NODE_ENV, SNS_ALERT_TOPIC_ARN, ERROR_LOG_BUCKET } from './config';
 
 const serverlessConfiguration: AWS = {
   service: 'quantum-containers',
@@ -8,7 +8,21 @@ const serverlessConfiguration: AWS = {
     'serverless-jetpack',
     'serverless-offline'
   ],
-
+  custom: {
+    jetpack: {
+      concurrency: 1, // Reduce concurrency to prevent too many open files
+      preInclude: [], // Add any critical files/folders here
+      trace: false,   // This can reduce file operations
+      // Explicitly exclude unnecessary files to reduce the number of files processed
+      exclude: [
+        ".git/**",
+        ".vscode/**",
+        "test/**",
+        "coverage/**",
+        "**/*.map"  // Exclude source maps which can be numerous
+      ]
+    }
+  },
   provider: {
     name: 'aws',
     runtime: 'nodejs18.x',
@@ -18,8 +32,8 @@ const serverlessConfiguration: AWS = {
     stage: 'dev',
     environment: {
       APP_AWS_REGION: 'us-east-1',
-      ERROR_LOGS_BUCKET: { Ref: 'ErrorLogsBucket' },
-      SNS_ALERT_TOPIC_ARN: { Ref: 'CorruptEventAlertTopic' },
+      ERROR_LOGS_BUCKET: ERROR_LOG_BUCKET,//{ Ref: 'ErrorLogsBucket' },
+      SNS_ALERT_TOPIC_ARN: SNS_ALERT_TOPIC_ARN,//{ Ref: 'CorruptEventAlertTopic' },
       NODE_ENV: NODE_ENV,
       MONGO_URI: MONGO_URI
     },
@@ -60,8 +74,8 @@ const serverlessConfiguration: AWS = {
       ],
       environment: {
         APP_AWS_REGION: 'us-east-1',
-        ERROR_LOGS_BUCKET: { Ref: 'ErrorLogsBucket' },
-        SNS_ALERT_TOPIC_ARN: { Ref: 'CorruptEventAlertTopic' },
+        ERROR_LOGS_BUCKET: ERROR_LOG_BUCKET,//{ Ref: 'ErrorLogsBucket' },
+        SNS_ALERT_TOPIC_ARN: SNS_ALERT_TOPIC_ARN,//{ Ref: 'CorruptEventAlertTopic' },
         NODE_ENV: NODE_ENV,
         MONGO_URI: MONGO_URI
       }
@@ -102,7 +116,27 @@ const serverlessConfiguration: AWS = {
         }
       }
     }
+  },
+  package: {
+    individually: false,
+    patterns: [
+      '!test/**',
+      '!.vscode/**',
+      '!**/*.spec.ts',
+      '!coverage/**',
+      '!docs/**',
+      '!scripts/**',
+      '!**/*.md',
+      '!**/*.log',
+      '!**/*.map',
+      '!**/*.yml',
+      '!**/*.yaml',
+      '!**/tsconfig.*.json',
+      '!**/jest.config.*',
+      '!**/jest.setup.ts'
+    ]
   }
+  
 };
 
 module.exports = serverlessConfiguration;

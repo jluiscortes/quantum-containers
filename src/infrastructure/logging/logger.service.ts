@@ -5,7 +5,7 @@ import * as AWS from 'aws-sdk';
 export class CustomLoggerService implements LoggerService {
   private readonly console = new console.Console(process.stdout, process.stderr);
   private readonly s3 = new AWS.S3();
-  private readonly bucket = process.env.ERROR_LOG_BUCKET ?? 'quantum-error-logs';
+  private readonly bucket = process.env.ERROR_LOG_BUCKET;
 
   log(message: string) {
     this.console.log(message);
