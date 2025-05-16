@@ -1,30 +1,55 @@
 import type { AWS } from '@serverless/typescript';
+import { MONGO_URI, NODE_ENV } from './config';
 
 const serverlessConfiguration: AWS = {
   service: 'quantum-containers',
-  
+
   plugins: [
     'serverless-jetpack',
     'serverless-offline'
   ],
-  
+
   provider: {
     name: 'aws',
     runtime: 'nodejs18.x',
     region: 'us-east-1',
     memorySize: 2048,
     timeout: 29,
-    stage: 'dev', // prefix "dev" if undefined
+    stage: 'dev',
     environment: {
-      APP_AWS_REGION: 'US-east-1',
+      APP_AWS_REGION: 'us-east-1',
+      ERROR_LOGS_BUCKET: { Ref: 'ErrorLogsBucket' },
+      SNS_ALERT_TOPIC_ARN: { Ref: 'CorruptEventAlertTopic' },
+      NODE_ENV: NODE_ENV,
+      MONGO_URI: MONGO_URI
+    },
+    iam: {
+      role: {
+        statements: [
+          // Permiso para S3
+          {
+            Effect: 'Allow',
+            Action: ['s3:PutObject', 's3:GetObject', 's3:ListBucket'],
+            Resource: [
+              { 'Fn::GetAtt': ['ErrorLogsBucket', 'Arn'] },
+              { 'Fn::Join': ['', [{ 'Fn::GetAtt': ['ErrorLogsBucket', 'Arn'] }, '/*']] }
+            ]
+          },
+          // Permiso para SNS
+          {
+            Effect: 'Allow',
+            Action: ['sns:Publish'],
+            Resource: { Ref: 'CorruptEventAlertTopic' }
+          }
+        ]
+      }
     }
   },
-  
+
   functions: {
-    main: { // The name of the lambda function
-      // The module 'handler' is exported in the file 'src/lambda'
+    main: {
       handler: 'dist/src/main/lambda.handler',
-      description: 'nest monolith serverless demo',
+      description: 'quantum-containers',
       events: [
         {
           http: {
@@ -32,17 +57,50 @@ const serverlessConfiguration: AWS = {
             path: '/{any+}'
           }
         }
-      ]
+      ],
+      environment: {
+        APP_AWS_REGION: 'us-east-1',
+        ERROR_LOGS_BUCKET: { Ref: 'ErrorLogsBucket' },
+        SNS_ALERT_TOPIC_ARN: { Ref: 'CorruptEventAlertTopic' },
+        NODE_ENV: NODE_ENV,
+        MONGO_URI: MONGO_URI
+      }
     }
   },
-  
-  // If you need custom configuration for jetpack or offline
-  custom: {
-    'serverless-jetpack': {
-      // Jetpack options here
-    },
-    'serverless-offline': {
-      // Offline options here
+
+  resources: {
+    Resources: {
+      // S3 para logs de errores
+      ErrorLogsBucket: {
+        Type: 'AWS::S3::Bucket',
+        Properties: {
+          BucketName: 'quantum-error-logs',
+          AccessControl: 'Private',
+          PublicAccessBlockConfiguration: {
+            BlockPublicAcls: true,
+            BlockPublicPolicy: true,
+            IgnorePublicAcls: true,
+            RestrictPublicBuckets: true
+          },
+          LifecycleConfiguration: {
+            Rules: [
+              {
+                Id: 'ExpireErrorLogs',
+                Status: 'Enabled',
+                ExpirationInDays: 90
+              }
+            ]
+          }
+        }
+      },
+
+      // SNS Topic para alertas de eventos corruptos
+      CorruptEventAlertTopic: {
+        Type: 'AWS::SNS::Topic',
+        Properties: {
+          TopicName: 'corrupt-event-alerts'
+        }
+      }
     }
   }
 };
