@@ -16,14 +16,14 @@ const serverlessConfiguration: AWS = {
     timeout: 29,
     stage: 'dev', // prefix "dev" if undefined
     environment: {
-      APP_AWS_REGION: '${self:provider.region}',
+      APP_AWS_REGION: 'US-east-1',
     }
   },
   
   functions: {
     main: { // The name of the lambda function
       // The module 'handler' is exported in the file 'src/lambda'
-      handler: 'dist/src/lambda.handler',
+      handler: 'dist/src/main/lambda.handler',
       description: 'nest monolith serverless demo',
       events: [
         {

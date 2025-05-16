@@ -1,0 +1,19 @@
+import * as AWS from 'aws-sdk';
+import { Injectable } from '@nestjs/common';
+
+@Injectable()
+export class S3LoggerService {
+  private readonly s3 = new AWS.S3();
+  private readonly bucketName = 'quantum-error-logs';
+
+  async logError(filename: string, error: any): Promise<void> {
+    await this.s3
+      .putObject({
+        Bucket: this.bucketName,
+        Key: `logs/${filename}.json`,
+        Body: JSON.stringify(error),
+        ContentType: 'application/json',
+      })
+      .promise();
+  }
+}
