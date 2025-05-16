@@ -6,7 +6,12 @@
   "scripts": {
     "build": "nest build",
     "deploy": "npx serverless deploy --stage dev",
-    "local": "npm run build && npx serverless offline --stage dev"
+    "local": "npm run build && npx serverless offline --stage dev",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main"
+
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
