@@ -1,98 +1,224 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Quantum Containers – Reto Técnico MGI Schrodinger
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Este proyecto resuelve el reto de gestión de contenedores usando arquitectura hexagonal y limpia con despliegue en AWS Fargate y alternativa en Lambda (Serverless).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## 🚀 Despliegue en AWS Fargate (orden correcto)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 1. Crear política de confianza y rol IAM
 
-## Project setup
+Guarda esto como `trust-policy.json`:
 
-```bash
-$ npm install
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
 ```
 
-## Compile and run the project
-
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+aws iam create-role --role-name ecsTaskExecutionRole --assume-role-policy-document file://trust-policy.json
+aws iam attach-role-policy --role-name ecsTaskExecutionRole --policy-arn arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 ```
 
-## Run tests
+---
+
+### 2. Construir imagen Docker
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
+npm run build
+docker build -t quantum-containers .
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 3. Subir imagen a Amazon ECR
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account_id>.dkr.ecr.us-east-1.amazonaws.com
+docker tag quantum-containers:latest <account_id>.dkr.ecr.us-east-1.amazonaws.com/quantum-containers:latest
+docker push <account_id>.dkr.ecr.us-east-1.amazonaws.com/quantum-containers:latest
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Resources
+### 4. Crear definición de tarea
 
-Check out a few resources that may come in handy when working with NestJS:
+Guarda esto como `task-def.json`:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```json
+{
+  "family": "quantum-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::<account_id>:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "quantum-container",
+      "image": "<account_id>.dkr.ecr.us-east-1.amazonaws.com/quantum-containers:latest",
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "essential": true
+    }
+  ]
+}
+```
 
-## Support
+```bash
+aws ecs register-task-definition --cli-input-json file://task-def.json
+```
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+### 5. Crear servicio y actualizar despliegue
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+```bash
+aws ecs create-service   --cluster quantum-cluster   --service-name quantum-service   --task-definition quantum-task   --desired-count 1   --launch-type FARGATE   --network-configuration "awsvpcConfiguration={subnets=[subnet-abc],securityGroups=[sg-abc],assignPublicIp=ENABLED}"
+```
 
-## License
+Para actualizar con nueva imagen:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+aws ecs update-service --cluster quantum-cluster --service quantum-service --force-new-deployment
+```
+
+---
+
+### 6. Obtener IP pública del contenedor
+
+```bash
+aws ecs list-tasks --cluster quantum-cluster --service-name quantum-service --desired-status RUNNING
+aws ecs describe-tasks --cluster quantum-cluster --tasks <taskArn>
+aws ec2 describe-network-interfaces --network-interface-ids <eni-id> --query "NetworkInterfaces[0].Association.PublicIp" --output text
+```
+
+---
+
+## ✅ Swagger
+
+Una vez desplegado, accede a la documentación en:
+
+```
+http://<public-ip>:3000/api-docs
+```
+
+---
+
+## ✅ Uso local
+
+```bash
+npm install
+npm run start:dev
+```
+
+---
+
+## ✅ Pruebas
+
+```bash
+npm run test
+```
+
+---
+
+## ✅ Despliegue alternativo (Lambda + Serverless)
+
+```bash
+npx serverless deploy --stage dev
+```
+
+> Ver archivo `serverless.ts` para configuración detallada.
+
+---
+---
+
+## ✅ Endpoints disponibles
+
+### 1. POST `/containers/events`
+
+**Descripción**: Registra un nuevo evento de cambio de estado de un contenedor.
+
+**Payload JSON**:
+```json
+{
+  "containerId": "C-001",
+  "state": "running",
+  "timestamp": "2025-05-17T12:00:00Z",
+  "source": "sensor-1"
+}
+```
+
+**Respuesta**:
+```json
+{
+  "message": "Evento registrado correctamente"
+}
+```
+
+---
+
+### 2. GET `/containers/:id/status`
+
+**Descripción**: Consulta el estado verificado (por quorum) de un contenedor específico.
+
+**Ejemplo**:
+```
+GET /containers/C-001/status
+```
+
+**Respuesta exitosa**:
+```json
+{
+  "id": "C-001",
+  "estado": "operational"
+}
+```
+
+**Respuesta si no hay quorum o eventos**:
+```json
+{
+  "success": false,
+  "message": "No se encontraron eventos para el contenedor C-001",
+  "data": null,
+  "errorCode": "CONTAINER_NOT_FOUND",
+  "statusCode": 404,
+  "timestamp": "2025-05-17T12:00:00Z",
+  "path": "/containers/C-001/status"
+}
+```
+
+---
+
+### 3. GET `/containers`
+
+**Descripción**: Lista los contenedores con estado verificado (aquellos que alcanzan quorum).
+
+**Respuesta**:
+```json
+[
+  {
+    "containerId": "C-001",
+    "estado": "operational"
+  },
+  {
+    "containerId": "C-002",
+    "estado": "damaged"
+  }
+]
+```
