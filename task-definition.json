@@ -1,0 +1,18 @@
+{
+  "family": "quantum-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "containerDefinitions": [
+    {
+      "name": "nest-app",
+      "image": "520411743437.dkr.ecr.us-east-1.amazonaws.com/quantum-containers",
+      "portMappings": [
+        { "containerPort": 3000, "protocol": "tcp" }
+      ],
+      "essential": true
+    }
+  ],
+  "executionRoleArn": "arn:aws:iam::520411743437:role/ecsTaskExecutionRole"
+}

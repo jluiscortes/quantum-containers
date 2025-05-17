@@ -10,17 +10,30 @@ const serverlessConfiguration: AWS = {
   ],
   custom: {
     jetpack: {
+      optimize: {
+        external: ['aws-sdk', 'mongodb', 'mongoose', 'uuid'],
+        nodeModules: [           // Specify only modules you actually need
+          '@nestjs/common',
+          '@nestjs/core',
+          '@nestjs/platform-express',
+          '@nestjs/mongoose',
+          'mongoose',
+          'aws-serverless-express',
+          'rxjs'
+        ]
+      },
       concurrency: 1, // Reduce concurrency to prevent too many open files
       preInclude: [], // Add any critical files/folders here
       trace: false,   // This can reduce file operations
-      // Explicitly exclude unnecessary files to reduce the number of files processed
-      exclude: [
-        ".git/**",
-        ".vscode/**",
-        "test/**",
-        "coverage/**",
-        "**/*.map"  // Exclude source maps which can be numerous
-      ]
+      minify: false,
+      enableCache: true,
+      //exclude: [
+      //  ".git/**",
+      //  ".vscode/**",
+      //  "test/**",
+      //  "coverage/**",
+      //  "**/*.map"  // Exclude source maps which can be numerous
+      //]
     }
   },
   provider: {
@@ -133,7 +146,9 @@ const serverlessConfiguration: AWS = {
       '!**/*.yaml',
       '!**/tsconfig.*.json',
       '!**/jest.config.*',
-      '!**/jest.setup.ts'
+      '!**/jest.setup.ts',
+      '!node_modules/**', 
+      'node_modules/@nestjs/**',
     ]
   }
   
