@@ -1,11 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IContainerRepository } from '../../domain/ports/container.repository';
-import { IContainerRepositoryToken } from '../../domain/tokens';
+import { IContainerRepository, CONTAINER_REPOSITORY } from '../../domain/ports/container.repository';
 
 @Injectable()
 export class GetVerifiedContainersUseCase {
   constructor(
-    @Inject(IContainerRepositoryToken)
+    @Inject(CONTAINER_REPOSITORY)
     private readonly repo: IContainerRepository
   ) {}
 

@@ -8,13 +8,14 @@ import { DetermineStatusUseCase } from './application/use-cases/determine-status
 import { GetVerifiedContainersUseCase } from './application/use-cases/get-verified-containers.usecase';
 
 import { MongoContainerRepository } from './infrastructure/mongodb/container.repository.impl';
-import { IContainerRepositoryToken } from './domain/tokens';
+
 import { ContainerEventSchema } from './infrastructure/mongodb/schemas/container-event.schema';
 
 import { SnsAlertPublisher } from './infrastructure/sns/sns-alert.publisher';
 import { CustomLoggerService } from './infrastructure/logging/logger.service';
 
 import * as Joi from 'joi';
+import { CONTAINER_REPOSITORY } from './domain/ports/container.repository';
 
 @Module({
   imports: [
@@ -67,7 +68,7 @@ import * as Joi from 'joi';
 
     // Repositorio
     {
-      provide: IContainerRepositoryToken,
+      provide: CONTAINER_REPOSITORY,
       useClass: MongoContainerRepository,
     },
   ],

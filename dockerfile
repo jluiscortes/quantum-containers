@@ -11,7 +11,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Instalar solo dependencias de producción
-RUN npm install --omit=dev
+RUN npm ci
 
 # Copiar el resto del código (incluye .env)
 COPY . .

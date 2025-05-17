@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { IContainerRepository } from '../../domain/ports/container.repository';
-import { IContainerRepositoryToken } from '../../domain/tokens';
+import { IContainerRepository, CONTAINER_REPOSITORY } from '../../domain/ports/container.repository';
 import { ContainerEvent } from '../../domain/entities/container.entity';
 import { ContainerNotFoundException } from '../../domain/errors/container-not-found.exception';
 
@@ -9,7 +8,7 @@ export class DetermineStatusUseCase {
   private readonly logger = new Logger(DetermineStatusUseCase.name);
 
   constructor(
-    @Inject(IContainerRepositoryToken)
+    @Inject(CONTAINER_REPOSITORY)
     private readonly repo: IContainerRepository
   ) {}
 

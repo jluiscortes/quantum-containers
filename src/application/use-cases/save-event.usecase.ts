@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { IContainerRepository } from '../../domain/ports/container.repository';
-import { IContainerRepositoryToken } from '../../domain/tokens';
+import { IContainerRepository, CONTAINER_REPOSITORY } from '../../domain/ports/container.repository';
 import { ContainerEvent } from '../../domain/entities/container.entity';
 import { SnsAlertPublisher } from '../../infrastructure/sns/sns-alert.publisher';
 import { CustomLoggerService } from '../../infrastructure/logging/logger.service';
@@ -9,7 +8,7 @@ import { CustomLoggerService } from '../../infrastructure/logging/logger.service
 export class SaveEventUseCase {
   private readonly logger = new Logger(SaveEventUseCase.name);
   constructor(
-    @Inject(IContainerRepositoryToken)
+    @Inject(CONTAINER_REPOSITORY)
     private readonly repo: IContainerRepository,
     private readonly sns: SnsAlertPublisher,
     private readonly logService: CustomLoggerService
