@@ -2,10 +2,17 @@ import './config'; // Your existing config import
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { GlobalResponseInterceptor } from './infrastructure/http/global-response.interceptor';
+import { GlobalExceptionFilter } from './infrastructure/http/global-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors(); // Enable CORS for all routes
+  
+  // Registramos interceptor y filtro global
+  app.useGlobalInterceptors(new GlobalResponseInterceptor());
+  app.useGlobalFilters(new GlobalExceptionFilter());
+  
   const port = process.env.PORT || 3000;
   const developmentHost = process.env.DEV_HOST || 'localhost';
   // Swagger configuration
