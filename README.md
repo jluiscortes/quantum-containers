@@ -50,6 +50,12 @@ El sistema implementa mecanismos de persistencia resilientes:
 
 ## 🚀 Despliegue en AWS Fargate
 
+### 0. Diagrama de arquitectura
+
+![alt text](mgi-challenge-diagram.jpg)
+
+---
+
 ### 1. Crear política de confianza y rol IAM
 
 Guarda esto como `trust-policy.json`:
